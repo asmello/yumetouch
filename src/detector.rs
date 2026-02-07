@@ -36,7 +36,7 @@ impl Detector {
         log::info!("watching for ssh-keygen signing processes");
 
         while !self.shutdown.load(Ordering::Relaxed) {
-            let signing = Self::is_signing_in_progress();
+            let signing = Self::is_touch_pending();
 
             match (&state, signing) {
                 (State::Idle, true) => {
@@ -70,9 +70,9 @@ impl Detector {
         }
     }
 
-    fn is_signing_in_progress() -> bool {
+    fn is_touch_pending() -> bool {
         Command::new("pgrep")
-            .args(["-f", "ssh-keygen.*-Y sign"])
+            .args(["-f", "ssh-keygen.*-Y sign|ssh-sk-helper"])
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .status()
