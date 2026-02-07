@@ -1,0 +1,4 @@
+[notification]
+mode = "notification"  # "notification", "dialog", or "both"
+sound = "Funk"         # macOS system sound name
+timeout_secs = 5       # seconds of silence before dismissing
