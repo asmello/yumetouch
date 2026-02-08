@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.yumetouch</string>
+    <string>net.sadmelon.yumetouch</string>
     <key>ProgramArguments</key>
     <array>
         <string>/usr/local/bin/yumetouch</string>

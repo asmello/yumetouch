@@ -42,7 +42,9 @@ fn build_notifier(mode: &NotificationMode, sound: &str) -> Box<dyn Notifier> {
     let icon_path = icon::ensure_icon().to_str().map(String::from);
 
     match mode {
-        NotificationMode::Notification => Box::new(NotificationCenterNotifier::new(sound, icon_path)),
+        NotificationMode::Notification => {
+            Box::new(NotificationCenterNotifier::new(sound, icon_path))
+        }
         NotificationMode::Dialog => Box::new(DialogNotifier::new(sound, icon_path)),
         NotificationMode::Both => Box::new(CompositeNotifier::new(vec![
             Box::new(NotificationCenterNotifier::new(sound, icon_path.clone())),
@@ -95,7 +97,7 @@ fn install_launch_agent() {
         <plist version="1.0">
         <dict>
             <key>Label</key>
-            <string>com.yumetouch</string>
+            <string>net.sadmelon.yumetouch</string>
             <key>ProgramArguments</key>
             <array>
                 <string>{}</string>
@@ -116,7 +118,7 @@ fn install_launch_agent() {
     let plist_dir = home_dir().join("Library/LaunchAgents");
     std::fs::create_dir_all(&plist_dir).expect("could not create LaunchAgents directory");
 
-    let plist_path = plist_dir.join("com.yumetouch.plist");
+    let plist_path = plist_dir.join("net.sadmelon.yumetouch.plist");
     std::fs::write(&plist_path, plist_content).expect("could not write plist file");
 
     let status = std::process::Command::new("launchctl")
@@ -137,7 +139,7 @@ fn install_launch_agent() {
 }
 
 fn uninstall_launch_agent() {
-    let plist_path = home_dir().join("Library/LaunchAgents/com.yumetouch.plist");
+    let plist_path = home_dir().join("Library/LaunchAgents/net.sadmelon.yumetouch.plist");
 
     if !plist_path.exists() {
         eprintln!("LaunchAgent not found at {}", plist_path.display());
