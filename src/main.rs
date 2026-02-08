@@ -1,5 +1,6 @@
 mod config;
 mod detector;
+mod icon;
 mod notifier;
 
 use clap::{Parser, Subcommand};
@@ -7,8 +8,8 @@ use config::{Config, NotificationMode};
 use detector::{Detector, DetectorEvent};
 use notifier::{CompositeNotifier, DialogNotifier, NotificationCenterNotifier, Notifier};
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 #[derive(Parser)]
 #[command(name = "yumetouch", about = "macOS YubiKey touch notifier")]
@@ -38,19 +39,15 @@ enum Commands {
 }
 
 fn build_notifier(mode: &NotificationMode, sound: &str) -> Box<dyn Notifier> {
+    let icon_path = icon::ensure_icon().to_str().map(String::from);
+
     match mode {
-        NotificationMode::Notification => {
-            Box::new(NotificationCenterNotifier::new(sound))
-        }
-        NotificationMode::Dialog => {
-            Box::new(DialogNotifier::new(sound))
-        }
-        NotificationMode::Both => {
-            Box::new(CompositeNotifier::new(vec![
-                Box::new(NotificationCenterNotifier::new(sound)),
-                Box::new(DialogNotifier::new(sound)),
-            ]))
-        }
+        NotificationMode::Notification => Box::new(NotificationCenterNotifier::new(sound, icon_path)),
+        NotificationMode::Dialog => Box::new(DialogNotifier::new(sound, icon_path)),
+        NotificationMode::Both => Box::new(CompositeNotifier::new(vec![
+            Box::new(NotificationCenterNotifier::new(sound, icon_path.clone())),
+            Box::new(DialogNotifier::new(sound, icon_path)),
+        ])),
     }
 }
 
@@ -94,25 +91,25 @@ fn install_launch_agent() {
     let binary = std::env::current_exe().expect("could not determine current executable path");
     let plist_content = format!(
         r#"<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>Label</key>
-    <string>com.yumetouch</string>
-    <key>ProgramArguments</key>
-    <array>
-        <string>{}</string>
-    </array>
-    <key>RunAtLoad</key>
-    <true/>
-    <key>KeepAlive</key>
-    <true/>
-    <key>StandardOutPath</key>
-    <string>/tmp/yumetouch.log</string>
-    <key>StandardErrorPath</key>
-    <string>/tmp/yumetouch.err</string>
-</dict>
-</plist>"#,
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>Label</key>
+            <string>com.yumetouch</string>
+            <key>ProgramArguments</key>
+            <array>
+                <string>{}</string>
+            </array>
+            <key>RunAtLoad</key>
+            <true/>
+            <key>KeepAlive</key>
+            <true/>
+            <key>StandardOutPath</key>
+            <string>/tmp/yumetouch.log</string>
+            <key>StandardErrorPath</key>
+            <string>/tmp/yumetouch.err</string>
+        </dict>
+        </plist>"#,
         binary.display()
     );
 
@@ -120,8 +117,7 @@ fn install_launch_agent() {
     std::fs::create_dir_all(&plist_dir).expect("could not create LaunchAgents directory");
 
     let plist_path = plist_dir.join("com.yumetouch.plist");
-    std::fs::write(&plist_path, plist_content)
-        .expect("could not write plist file");
+    std::fs::write(&plist_path, plist_content).expect("could not write plist file");
 
     let status = std::process::Command::new("launchctl")
         .args(["load", "-w"])
@@ -130,7 +126,10 @@ fn install_launch_agent() {
         .expect("failed to run launchctl");
 
     if status.success() {
-        println!("installed and loaded LaunchAgent at {}", plist_path.display());
+        println!(
+            "installed and loaded LaunchAgent at {}",
+            plist_path.display()
+        );
     } else {
         eprintln!("launchctl load failed (exit code: {:?})", status.code());
         std::process::exit(1);
@@ -138,8 +137,7 @@ fn install_launch_agent() {
 }
 
 fn uninstall_launch_agent() {
-    let plist_path = home_dir()
-        .join("Library/LaunchAgents/com.yumetouch.plist");
+    let plist_path = home_dir().join("Library/LaunchAgents/com.yumetouch.plist");
 
     if !plist_path.exists() {
         eprintln!("LaunchAgent not found at {}", plist_path.display());
