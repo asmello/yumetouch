@@ -1,18 +1,13 @@
 use serde::Deserialize;
 use std::path::PathBuf;
 
-#[derive(Debug, Clone, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Default, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum NotificationMode {
+    #[default]
     Notification,
     Dialog,
     Both,
-}
-
-impl Default for NotificationMode {
-    fn default() -> Self {
-        Self::Notification
-    }
 }
 
 impl std::str::FromStr for NotificationMode {

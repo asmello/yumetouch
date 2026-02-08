@@ -73,6 +73,8 @@
         }
       );
 
+      formatter = forEachSystem (system: (mkPkgs system).nixfmt-tree);
+
       devShells = forEachSystem (
         system:
         let
