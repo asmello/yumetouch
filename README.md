@@ -2,17 +2,16 @@
 
 A lightweight macOS daemon that detects when your YubiKey is waiting for a physical touch and shows a notification.
 
-When a YubiKey with touch-required policy is used for GPG signing (e.g. `git commit -S`) or SSH auth (e.g. `git push` via gpg-agent), the YubiKey's LED blinks to indicate it needs touch. This is easy to miss, causing operations to time out. yumetouch watches for this and alerts you.
+When using a FIDO2 YubiKey (e.g. `ed25519-sk`) for SSH authentication or Git commit signing, the key blinks to indicate it needs touch. This is easy to miss, causing operations to hang. yumetouch watches for this and alerts you.
 
 ## How it works
 
-yumetouch monitors the macOS unified log for messages from `usbsmartcardreaderd`. When the YubiKey is waiting for touch during any OpenPGP operation, macOS logs `"Time extension received"` repeatedly via CryptoTokenKit. This covers both GPG and SSH operations since they all flow through:
+yumetouch polls for processes that indicate a YubiKey touch is pending:
 
-```
-gpg/ssh → gpg-agent → scdaemon → PC/SC → usbsmartcardreaderd → YubiKey
-```
+- `ssh-keygen -Y sign` — Git commit/tag signing via SSH key
+- `ssh-sk-helper` — SSH authentication with FIDO2 keys (git push, ssh connections)
 
-When detected, yumetouch fires a notification. After 5 seconds of silence (touch was provided or the operation timed out), it dismisses.
+When a signing or auth process persists beyond a short grace period (500ms), yumetouch assumes the YubiKey is waiting for touch and fires a notification. Once the process exits, it dismisses.
 
 ## Installation
 
@@ -76,9 +75,9 @@ timeout_secs = 5       # seconds of silence before dismissing
 
 | Mode | Description |
 |------|-------------|
-| `notification` | Notification Center banner with sound (default) |
-| `dialog` | Modal dialog via osascript with sound, auto-dismisses after 30s |
-| `both` | Both notification banner and modal dialog |
+| `notification` | Notification Center banner with YubiKey icon and sound (default) |
+| `dialog` | Modal alert with YubiKey icon and sound, dismisses on touch or OK |
+| `both` | Both notification banner and modal alert |
 
 ### Available sounds
 
@@ -88,17 +87,17 @@ Any sound in `/System/Library/Sounds/` works. Common choices: `Funk`, `Glass`, `
 
 ### No notifications appear
 
-`log stream` may require granting your terminal (or the LaunchAgent) **Full Disk Access** in System Preferences > Privacy & Security > Full Disk Access.
+Make sure you're using Homebrew's OpenSSH (`/opt/homebrew/bin/ssh`), not the macOS built-in. The built-in SSH doesn't use `ssh-sk-helper` in the same way.
 
 ### Testing detection
 
-Trigger a GPG operation that requires touch:
+Trigger an SSH signing operation that requires touch:
 
 ```bash
-echo test | gpg --sign > /dev/null
+echo test | ssh-keygen -Y sign -f ~/.ssh/id_ed25519_sk -n test
 ```
 
-Run yumetouch with `-v` to see debug output confirming it detects the log messages.
+Run yumetouch with `-v` to see debug output confirming it detects the process.
 
 ### Checking LaunchAgent logs
 
