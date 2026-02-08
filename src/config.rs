@@ -84,7 +84,10 @@ impl Config {
                 }
             },
             Err(_) => {
-                log::debug!("no config file at {}, using defaults", config_path.display());
+                log::debug!(
+                    "no config file at {}, using defaults",
+                    config_path.display()
+                );
                 Self::default()
             }
         }

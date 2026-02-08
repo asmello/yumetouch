@@ -112,8 +112,7 @@ impl Notifier for DialogNotifier {
             cmd.args(["-e", r#"display alert "YubiKey" message "Touch your YubiKey" buttons {"OK"} giving up after 30"#]);
         }
 
-        match cmd.spawn()
-        {
+        match cmd.spawn() {
             Ok(child) => self.dialog_child = Some(child),
             Err(e) => log::warn!("failed to spawn osascript dialog: {e}"),
         }
