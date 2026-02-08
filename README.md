@@ -18,8 +18,7 @@ When a signing or auth process persists beyond a short grace period (500ms), yum
 ### Build from source
 
 ```bash
-cargo build --release
-cp target/release/yumetouch /usr/local/bin/
+cargo install --path .
 ```
 
 ### Auto-start on login
