@@ -100,7 +100,7 @@ impl Notifier for DialogNotifier {
                     "var W=260,H=170;",
                     "var sf=$.NSScreen.mainScreen.frame;",
                     "var p=$.NSPanel.alloc.initWithContentRectStyleMaskBackingDefer(",
-                    "$.NSMakeRect((sf.size.width-W)/2,(sf.size.height-H)/2+100,W,H),32769,2,false);",
+                    "$.NSMakeRect(sf.origin.x+(sf.size.width-W)/2,sf.origin.y+(sf.size.height-H)/2+100,W,H),32769,2,false);",
                     "p.setTitleVisibility(1);",
                     "p.setTitlebarAppearsTransparent(true);",
                     "p.setMovableByWindowBackground(true);",
