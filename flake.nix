@@ -12,6 +12,7 @@
 
   outputs =
     {
+      self,
       nixpkgs,
       crane,
       rust-overlay,
@@ -72,6 +73,10 @@
           );
         }
       );
+
+      overlays.default = final: _prev: {
+        yumetouch = self.packages.${final.system}.default;
+      };
 
       formatter = forEachSystem (system: (mkPkgs system).nixfmt-tree);
 
