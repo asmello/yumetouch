@@ -121,6 +121,14 @@ fn install_launch_agent() {
     let plist_path = plist_dir.join("net.sadmelon.yumetouch.plist");
     std::fs::write(&plist_path, plist_content).expect("could not write plist file");
 
+    // Unload first in case it's already loaded (ignore errors)
+    let _ = std::process::Command::new("launchctl")
+        .args(["unload", "-w"])
+        .arg(&plist_path)
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .status();
+
     let status = std::process::Command::new("launchctl")
         .args(["load", "-w"])
         .arg(&plist_path)
